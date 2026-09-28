@@ -10,7 +10,7 @@
     "postinstall": "prisma skills sync || exit 0",
       "start": "tsx src/app.ts",
       "build": "tsc",
-"vercel-build": "prisma-generate"
+"vercel-build": "prisma generate"
   },
   "repository": {
     "type": "git",
