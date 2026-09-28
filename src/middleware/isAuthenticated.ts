@@ -21,3 +21,5 @@ export const isAuthenticated = jwt({
     return token;
   },
 });
+
+export default isAuthenticated
