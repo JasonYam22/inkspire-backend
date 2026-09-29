@@ -26,18 +26,11 @@ router.post("/signup", async(req, res, next) => {
   }
 
   // email has a valid structure
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 if (!emailRegex.test(email)) {
   res.status(400).json({ errorMessage: "Please provide a valid email address." });
   return;
 }
-
-  // (optional)
-  // also username is required
-  // username could also be unique
-  // the email exist, tested by sending an email with an email send provider
-  // max length for string properties
 
   try {
 
@@ -95,8 +88,8 @@ router.post("/login", async (req, res, next) => {
     const payload = {
       id: foundUser.id,
       email: foundUser.email,
-      username: foundUser.username
-    /*   role: foundUser.role */
+      username: foundUser.username,
+       role: foundUser.role 
     }
 
     const authToken = jwt.sign(payload, process.env.TOKEN_SECRET!, {
