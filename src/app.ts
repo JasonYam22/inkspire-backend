@@ -7,9 +7,6 @@ import ideaRouter from "./routes/tattoo-idea.routes.js"
 import userRouter from "./routes/user.routes.js"
 import { errorHandler, notFoundHandler } from "./error-handling/index.js";
 
-
-
-
 const app = express();
 config(app)
 const PORT = process.env.PORT || 5005;
