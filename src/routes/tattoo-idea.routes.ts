@@ -91,8 +91,7 @@ router.put(
 router.delete(
   "/:ideaId",
   isAuthenticated,
-  (req: any, res: any, next: NextFunction) => {
-    prisma.tattooIdea
+  (req: any, res: any, next: NextFunction) => {    prisma.tattooIdea
       .delete({ where: { id: req.params.ideaId, userId: req.payload.id } })
       .then((idea) => {
         res.status(200).json(idea);
