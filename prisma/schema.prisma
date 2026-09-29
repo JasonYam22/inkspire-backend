@@ -15,7 +15,8 @@ model User {
   password String
   username     String
   ideas    TattooIdea[]
-  imageURL String?
+  imageUrl String?
+  
   createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 }

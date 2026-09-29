@@ -7,6 +7,7 @@ import isAuthenticated from "../middleware/isAuthenticated.js";
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+//upload image file
 router.post(
   "/upload",
   isAuthenticated,
@@ -36,6 +37,38 @@ router.post(
     } catch (error) {
       next(error);
     }
+  },
+);
+
+//get profile
+router.get("/user", isAuthenticated, (req: any, res: any, next: NextFunction) => {
+    prisma.user.findMany({ where: {id: req.payload.id}})
+    .then((user) => {
+        res.status(200).json(user)
+    })
+    .catch((error) => {
+        next(error)
+    })
+})
+
+//edit profile
+router.put(
+  "/user",
+  isAuthenticated,
+  (req: any, res: any, next: NextFunction) => {
+    const { email, username, imageUrl } = req.body || {};
+
+    prisma.user
+      .update({
+        where: { id: req.payload.id },
+        data: { email, username, imageUrl },
+      })
+      .then((user) => {
+        res.status(200).json(user);
+      })
+      .catch((error) => {
+        next(error);
+      });
   },
 );
 
