@@ -72,4 +72,23 @@ router.put(
   },
 );
 
+//image search
+router.get(
+  "/inspiration",
+  isAuthenticated,
+  async (req: any, res: any, next: NextFunction) => {
+    try {
+      const query = req.query.search || "tattoo";
+      const response = await fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query as string)}&per_page=20`,
+        { headers: { Authorization: process.env.PEXELS_API_KEY! } }
+      );
+      const data = await response.json();
+      res.status(200).json(data.photos);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;
