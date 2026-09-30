@@ -1,6 +1,7 @@
 import { Router, type NextFunction } from "express";
 import prisma from "../prisma.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
+import uploader from "../config/cloudinary.js"
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.get("/", isAuthenticated, (req: any, res: any, next: NextFunction) => {
 const { genre } = req.query
 
   prisma.tattooIdea
-    .findMany({ where: { userId: req.payload.id, genre } })
+    .findMany({where: genre ? String(genre) : {} })
     .then((tattooIdea) => {
       res.status(200).json(tattooIdea);
     })
@@ -20,8 +21,8 @@ const { genre } = req.query
 });
 
 // create an idea
-router.post("/", isAuthenticated, (req: any, res: any, next: NextFunction) => {
-  const { title, genre, spot, imageUrl, notes } = req.body;
+router.post("/", isAuthenticated, uploader.single("image"), (req: any, res: any, next: NextFunction) => {
+  const { title, genre, spot, notes, artist, social } = req.body;
 
   if (!title) {
         return res.status(400).json({ message: "Title required" });
@@ -33,8 +34,10 @@ router.post("/", isAuthenticated, (req: any, res: any, next: NextFunction) => {
         title,
         genre,
         spot,
-        imageUrl,
+        artist,
+        social,
         notes,
+        imageUrl: req.file?.path
       },
     })
     .then((tattooIdea) => {
