@@ -9,7 +9,7 @@ const router = Router();
 // POST "/api/auth/signup" => receive user credentials and create the document in the DB
 router.post("/signup", async(req, res, next) => {
   // console.log(req.body)
-  const {email, password, username} = req.body
+  const {email, password, username, role} = req.body
   
   // server validators
   // email and password are required
@@ -44,9 +44,11 @@ if (!emailRegex.test(email)) {
     const hashedPassword = await bcrypt.hash(password, 8)
 
     await prisma.user.create({
-      data: {email,
+      data: {
+        email,
       password: hashedPassword,
-      username: username
+      username: username,
+      role,
       },
     })
     

@@ -42,7 +42,7 @@ router.post(
 
 //get profile
 router.get("/user", isAuthenticated, (req: any, res: any, next: NextFunction) => {
-    prisma.user.findMany({ where: {id: req.payload.id}})
+    prisma.user.findUnique({ where: {id: req.payload.id}})
     .then((user) => {
         res.status(200).json(user)
     })

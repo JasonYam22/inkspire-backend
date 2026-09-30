@@ -32,6 +32,8 @@ model TattooIdea {
   imageUrl   String?
   notes      String?
   isFavorite Boolean  @default(false)
+  artist String?
+  social String?
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
