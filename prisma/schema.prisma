@@ -19,7 +19,7 @@ model User {
   username String
   ideas    TattooIdea[]
   imageUrl String?
-
+savedIdeas TattooIdea[] @relation("SavedIdeas")
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,6 +37,7 @@ model TattooIdea {
   artist     String?
   social     String?
   userId     String
+  savedBy User[] @relation("SavedIdeas")
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
