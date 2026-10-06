@@ -151,11 +151,12 @@ router.put(
   (req: any, res: any, next: NextFunction) => {
     const { title, genre, spot, artist, social, notes, isFavorite } = req.body;
     const imageUrl = req.file?.path;
+const isFavoriteValue = isFavorite === undefined ? undefined : String(isFavorite) === "true";
 
     prisma.tattooIdea
       .update({
         where: { id: req.params.ideaId, userId: req.payload.id },
-        data: { title, genre, spot, artist, social, imageUrl, notes, isFavorite },
+        data: { title, genre, spot, artist, social, imageUrl : imageUrl || undefined, notes, isFavorite: isFavoriteValue } as any,
       })
       .then((tattooIdea) => {
         res.status(200).json(tattooIdea);
