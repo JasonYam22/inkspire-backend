@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
@@ -61,7 +61,7 @@ if (!emailRegex.test(email)) {
 })
 
 // POST "/api/auth/login" => validate user credentials and create the JWT
-router.post("/login", async (req, res, next) => {
+router.post("/login", async (req: Request, res: Response, next) => {
   const { email, password } = req.body;
 
   if (!email) {
@@ -106,7 +106,7 @@ router.post("/login", async (req, res, next) => {
 });
 
 // GET "/api/auth/verify" => received the token, and validates it and will send to the FE who the owner of the token it.
-router.get("/verify", isAuthenticated, (req: any, res: any) => {
+router.get("/verify", isAuthenticated, (req: Request, res: Response) => {
   res.status(200).json({ payload: req.payload })
 })
 
