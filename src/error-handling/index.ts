@@ -4,7 +4,12 @@ export const notFoundHandler = (req: Request, res: Response, next: NextFunction)
   res.status(404).json({ message: "Route not found" });
 };
 
-export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
+type appError = {
+  name: string;
+  message: string,
+  code?: string
+}
+export const errorHandler = (error: appError, req: Request, res: Response, next: NextFunction) => {
 
 if (error.code === "P2025") {
     res.status(404).json({message: "Not found"})
