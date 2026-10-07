@@ -1,21 +1,21 @@
 import { expressjwt as jwt } from "express-jwt";
+import type { Request } from "express";
 
 export const isAuthenticated = jwt({
   secret: process.env.TOKEN_SECRET!,
   algorithms: ["HS256"],
   requestProperty: "payload",
-  getToken: (req: any) => {
-    if (!req.headers || !req.headers.authorization) {
-      console.log("There is no token");
-      return null;
+  getToken: (req: Request) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return undefined;
     }
 
-    const tokenArr = req.headers.authorization.split(" ");
-    const tokenType = tokenArr[0];
-    const token = tokenArr[1];
+ const [tokenType, token] = authHeader.split(" ");
 
     if (tokenType !== "Bearer") {
-      return null;
+      return undefined;
     }
 
     return token;

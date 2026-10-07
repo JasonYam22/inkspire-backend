@@ -1,8 +1,9 @@
-import { Router, type NextFunction } from "express";
+import { Router,type Request, type Response, type NextFunction } from "express";
 import multer from "multer";
 import prisma from "../prisma.js";
 import supabase from "../supabase.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
+
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -12,13 +13,13 @@ router.post(
   "/upload",
   isAuthenticated,
   upload.single("image"),
-  async (req: any, res: any, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const fileName = `${req.payload.id}-${Date.now()}-${req.file.originalname}`;
+      const fileName = `${req.payload!.id}-${Date.now()}-${req.file.originalname}`;
 
       const { error } = await supabase.storage
         .from("avatars")
@@ -29,8 +30,9 @@ router.post(
       const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
       const user = await prisma.user.update({
-        where: { id: req.payload.id },
+        where: { id: req.payload!.id },
         data: { imageUrl: data.publicUrl },
+           omit: {password: true}
       });
 
       res.status(200).json(user);
@@ -41,8 +43,10 @@ router.post(
 );
 
 //get profile
-router.get("/user", isAuthenticated, (req: any, res: any, next: NextFunction) => {
-    prisma.user.findUnique({ where: {id: req.payload.id}})
+router.get("/user", isAuthenticated, (req: Request, res: Response, next: NextFunction) => {
+    prisma.user.findUnique({ where: {id: req.payload!.id},
+    omit: {password: true}
+    })
     .then((user) => {
         res.status(200).json(user)
     })
@@ -55,13 +59,14 @@ router.get("/user", isAuthenticated, (req: any, res: any, next: NextFunction) =>
 router.put(
   "/user",
   isAuthenticated,
-  (req: any, res: any, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const { email, username, imageUrl } = req.body || {};
 
     prisma.user
       .update({
-        where: { id: req.payload.id },
+        where: { id: req.payload!.id },
         data: { email, username, imageUrl },
+           omit: {password: true}
       })
       .then((user) => {
         res.status(200).json(user);
@@ -76,12 +81,14 @@ router.put(
 router.get(
   "/inspiration",
   isAuthenticated,
-  async (req: any, res: any, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = req.query.q || "tattoo";
+      const q = req.query.q 
+        const query = typeof q === "string" && q.trim() ? q : "tattoo";
+        //checks if its really a string
 
       const response = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query as string)}&per_page=20`,
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=20`,
         { headers: { Authorization: process.env.PEXELS_API_KEY! } }
       );
 
