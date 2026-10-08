@@ -41,7 +41,7 @@ if (!emailRegex.test(email)) {
       return 
     }
 
-    const hashedPassword = await bcrypt.hash(password, 8)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     await prisma.user.create({
       data: {
