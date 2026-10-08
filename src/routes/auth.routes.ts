@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import prisma from "../prisma.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
-import { sendVerificationEmail } from "../config/mailer";
+import { sendEmail } from "../config/mailer.js";
 
 const router = Router();
 
@@ -61,8 +61,8 @@ router.post("/signup", async (req: Request, res: Response, next) => {
     });
 
     // Send verification email
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(newUser.email, verificationUrl);
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+    await sendEmail(newUser.email, verificationUrl);
 
     res.status(201).json({ message: "Registration successful. Please check your email to verify your account." });
   } catch (error) {
