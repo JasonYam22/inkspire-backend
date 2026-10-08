@@ -1,23 +1,29 @@
-## Inkspire (backend)
+# Inkspire (backend)
 
-## INFO:
-**LIVE DEMO**: https://inkspire-client.vercel.app/
-**API**: https://vercel.com/jason-yam/inkspire-backend
-**BACKEND REPO**: https://github.com/JasonYam22/inkspire-backend
-**FRONTEND REPO**: https://github.com/JasonYam22/inkspire-client
+An app for tracking tattoo ideas. The name comes from ink + inspire.
 
-An app, which tracks tattoo ideas, thus the origin of the name: ink + inspire.
+## Info
+- **Live demo:** https://inkspire-client.vercel.app/
+- **API:** https://inkspire-backend-phi.vercel.app/
+- **Backend repo:** https://github.com/JasonYam22/inkspire-backend
+- **Frontend repo:** https://github.com/JasonYam22/inkspire-client
 
-## Features:
--signing up and logging in with JWT authentication
--a whole crud on your own tattoo ideas where you can upload images
--exploring tattoo ideas of other users and being able to save these ideas to your collection
--creating ur own profie + uploading profile picture
+## Features
+- Sign up and log in with JWT authentication
+- Full CRUD (create, read, update, delete) on your own tattoo ideas, with image upload
+- Explore tattoo ideas from other users and save them to your collection
+- Create your own profile and upload a profile picture
 
-## Tech stack:
+## Tech stack
 Express, TypeScript, Prisma, PostgreSQL (Supabase), Cloudinary, JWT, bcrypt
 
-## API overview:
+## Getting started
+1. Clone the repo and run `npm install`
+2. Copy `.env.example` to `.env` and fill in the values
+3. Run `npx prisma migrate dev`
+4. Run `npm run dev` (starts on http://localhost:5005)
+
+## API overview
 | Method | Route | What it does |
 |--------|-------|--------------|
 | POST | /api/auth/signup | Create an account |
@@ -26,3 +32,6 @@ Express, TypeScript, Prisma, PostgreSQL (Supabase), Cloudinary, JWT, bcrypt
 | POST | /api/ideas | Create an idea (with image) |
 | GET | /api/ideas/explore | Public feed of ideas |
 | POST | /api/ideas/explore/:id/save | Save or unsave an idea |
+
+## What I'd improve next
+- Automated tests and CI
