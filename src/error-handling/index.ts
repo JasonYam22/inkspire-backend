@@ -12,9 +12,15 @@ type appError = {
 export const errorHandler = (error: appError, req: Request, res: Response, next: NextFunction) => {
 
 if (error.code === "P2025") {
-    res.status(404).json({message: "Not found"})
+    res.status(404).json({message: "Not found" })
     return
 }
+
+if (error.code === "P2002") {
+    res.status(409).json({message: "Email already in use"})
+    return
+}
+
 if (error.name === "UnauthorizedError") {
   res.status(401).json({ message: "Unauthorized, please log in" });
   return;

@@ -42,7 +42,7 @@ router.post(
   (req: Request, res: Response, next: NextFunction) => {
     const { title, genre, spot, notes, artist, social } = req.body;
 
-    if (!title) {
+    if (!title || title.trim() === "") {
       res.status(400).json({ message: "Title required" });
       return;
     }
@@ -186,6 +186,12 @@ router.put(
     const isFavoriteValue =
       isFavorite === undefined ? undefined : String(isFavorite) === "true";
 
+      
+    if (title !== undefined && title.trim() === "") {
+      res.status(400).json({ message: "Title required" });
+      return;
+    }
+    
     prisma.tattooIdea
       .update({
         where: { id: req.params.ideaId as string, userId: req.payload!.id },

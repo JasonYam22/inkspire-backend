@@ -33,7 +33,6 @@ model TattooIdea {
   imageUrl   String?
   notes      String?
   isFavorite Boolean  @default(false)
-  isSaved    Boolean  @default(false)
   artist     String?
   social     String?
   userId     String
