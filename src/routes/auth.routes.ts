@@ -62,7 +62,11 @@ router.post("/signup", async (req: Request, res: Response, next) => {
 
     // Send verification email
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await sendEmail(newUser.email, verificationUrl);
+    await sendEmail(
+  newUser.email,
+  "Verify your Inkspire account",
+  `<p>Welcome to Inkspire! Click <a href="${verificationUrl}">here</a> to verify your email.</p>`
+);
 
     res.status(201).json({ message: "Registration successful. Please check your email to verify your account." });
   } catch (error) {
