@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -157,8 +157,32 @@ router.get("/verify-email", async (req: Request, res: Response, next) => {
 });
 
 // GET "/api/auth/verify" => validate JWT token for active session
-router.get("/verify", isAuthenticated, (req: Request, res: Response) => {
+router.get("/verify", isAuthenticated, (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({ payload: req.payload });
 });
+
+// POST "/api/auth/reset-password"
+router.post("/forgot-password",(req: Request, res: Response, next: NextFunction) => {
+
+  const { email } = req.body
+
+if (!email) {
+  res.status(400).json({errorMessage: "Email is required"})
+  return
+}
+
+prisma.user.findUnique({where: { email }})
+.then((foundUser) => {
+  if (!foundUser) {
+    res.status(200).json
+    return
+  }
+  return prisma.user
+
+
+const rawToken = crypto.randomBytes(32).toString("hex")
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex")
+})
+})
 
 export default router;
