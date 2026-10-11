@@ -97,10 +97,10 @@ router.post("/login", async (req: Request, res: Response, next) => {
     }
 
     // Optional: Block login if email is unverified
-    // if (!foundUser.isEmailVerified) {
-    //   res.status(403).json({ errorMessage: "Please verify your email address before logging in." });
-    //   return;
-    // }
+     if (!foundUser.isEmailVerified) {
+       res.status(403).json({ errorMessage: "Please verify your email address before logging in." });
+       return;
+     }
 
     const payload = {
       id: foundUser.id,
