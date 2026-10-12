@@ -192,7 +192,7 @@ prisma.user.findUnique({where: { email }})
 return sendEmail(foundUser.email,
   "Reset your password",
   `<p>Click here to reset your password. It will expire in 1 hour</p> 
-  <a>${process.env.CLIENT_URL}reset-password?token=${rawToken}</a>`)  
+  <a> href ="${process.env.CLIENT_URL}reset-password?token=${rawToken}">Reset Password</a>`)  
 })
 .then(() => {
   res.status(200).json({message: "We sent a reset link to the email, if it exists"})
