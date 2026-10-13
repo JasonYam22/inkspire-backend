@@ -42,7 +42,7 @@ router.post(
   (req: Request, res: Response, next: NextFunction) => {
     const { title, genre, spot, notes, artist, social } = req.body;
 
-    if (!title) {
+    if (title !== undefined && !title.trim()) {
       res.status(400).json({ message: "Title required" });
       return;
     }

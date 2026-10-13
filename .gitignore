@@ -1,5 +1,11 @@
 node_modules
 # Keep environment variables out of version control
 .env
-   dist
+dist
+.agents
+.claude
+.cursor
+.devin
+.windsurf
+skills-lock.json
 /generated/prisma

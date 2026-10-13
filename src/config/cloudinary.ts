@@ -8,7 +8,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET!,
 });
 
-// Defined separately because the package's types don't list `folder`
 const params = {
   folder: "inkspire",
   allowed_formats: ["jpg", "png", "jpeg", "webp"],
