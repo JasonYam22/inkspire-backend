@@ -5,12 +5,13 @@ import crypto from "crypto";
 import prisma from "../prisma.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import { sendEmail } from "../config/mailer.js";
+import { loginLimiter, emailLimiter } from "../middleware/rateLimiters.js";
 
 const router = Router();
 
 // POST "/api/auth/signup" => receive user credentials and create the document in the DB
-router.post("/signup", async (req: Request, res: Response, next) => {
-  const { email, password, username, role } = req.body;
+router.post("/signup", emailLimiter, async (req: Request, res: Response, next) => {
+  const { email, password, username } = req.body;
 
   // Server validators
   if (!email || !password) {
@@ -55,7 +56,6 @@ router.post("/signup", async (req: Request, res: Response, next) => {
         email,
         password: hashedPassword,
         username,
-        role,
         verificationToken,
         verificationTokenExpiry,
       },
@@ -76,7 +76,7 @@ router.post("/signup", async (req: Request, res: Response, next) => {
 });
 
 // POST "/api/auth/login" => validate user credentials and create the JWT
-router.post("/login", async (req: Request, res: Response, next) => {
+router.post("/login",loginLimiter, async (req: Request, res: Response, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -163,7 +163,7 @@ router.get("/verify", isAuthenticated, (req: Request, res: Response, next: NextF
 });
 
 // POST "/api/auth/forgot-password"
-router.post("/forgot-password",(req: Request, res: Response) => {
+router.post("/forgot-password", emailLimiter, (req: Request, res: Response) => {
 
   const { email } = req.body
 
@@ -193,7 +193,7 @@ prisma.user.findUnique({where: { email }})
 return sendEmail(foundUser.email,
   "Reset your password",
   `<p>Click here to reset your password. It will expire in 1 hour</p> 
-  <a> href ="${process.env.CLIENT_URL}reset-password?token=${rawToken}">Reset Password</a>`)  
+  <a href ="${process.env.CLIENT_URL}/reset-password?token=${rawToken}">Reset Password</a>`)  
 })
 .then(() => {
   res.status(200).json({message: "We sent a reset link to the email, if it exists"})
