@@ -24,11 +24,4 @@ app.get("/", (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-
-console.clear();
-
-    console.log(`Server is running on http://localhost:${PORT}`)
-})
-
 export default app;
