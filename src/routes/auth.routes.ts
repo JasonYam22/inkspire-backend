@@ -6,6 +6,8 @@ import prisma from "../prisma.js";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import { sendEmail } from "../config/mailer.js";
 import { loginLimiter, emailLimiter } from "../middleware/rateLimiters.js";
+import googleClient from "../config/google.js"
+import { connected } from "process";
 
 const router = Router();
 
@@ -256,4 +258,75 @@ return prisma.user.update({
   res.status(500).json({errorMessage: "Something went wrong, please try again."})
 })
 })
+
+// GET "/api/auth/google", sends user to the google login page
+router.get("/google",(req: Request, res: Response) => {
+const authorizeUrl = googleClient.generateAuthUrl({
+  access_type:"offline",
+  scope:["email", "profile"],
+})
+res.redirect(authorizeUrl)
+})
+
+// GET "/api/auth/google/callback", redirects user back to backend login page
+router.get("/google/callback", async (req: Request, res: Response, next: NextFunction) => {
+
+const { code } = req.query
+
+if (!code || typeof code !== "string") {
+res.status(400).json({ errorMessage: "Authorization code nout found."})
+return
+}
+
+try {
+  const { tokens } = await googleClient.getToken(code)
+  googleClient.setCredentials(tokens)
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: tokens.id_token!,
+    audience: process.env.GOOGLE_CLIENT_ID
+  })
+
+  const payload = ticket.getPayload()
+  const email = payload?.email;
+  const username = payload?.name
+
+  if (!email) {
+ res.status(400).json({errorMessage: "The google account does not provide an email"})
+ return
+  }
+
+  let user = await prisma.user.findUnique({
+  where: { email }
+})
+
+if (!user) {
+  user = await prisma.user.create({
+    data: {
+      email,
+      username: username || "Google User",
+      password: "",
+      isEmailVerified: true
+    }
+  })
+}
+
+const jwtPayload = {
+  id: user.id,
+  email: user.email,
+  username: user.username,
+  role: user.role
+}
+
+const authToken = jwt.sign(jwtPayload, process.env.TOKEN_SECRET!, {
+  expiresIn:"7d"
+})
+
+res.redirect(`${process.env.CLIENT_URL}/login?token=${authToken}`)
+
+} catch (error) {
+ next(error)
+}
+})
+
 export default router;
