@@ -7,7 +7,7 @@ import isAuthenticated from "../middleware/isAuthenticated.js";
 import { sendEmail } from "../config/mailer.js";
 import { loginLimiter, emailLimiter } from "../middleware/rateLimiters.js";
 import googleClient from "../config/google.js"
-import { connected } from "process";
+
 
 const router = Router();
 
@@ -22,7 +22,8 @@ router.post("/signup", emailLimiter, async (req: Request, res: Response, next) =
   }
 
   // Password strength
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm;
+const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}$/;
+
   if (!passwordRegex.test(password)) {
     res.status(400).json({
       errorMessage: "Password not strong enough. 8 characters, one uppercase, one lowercase, and one number needed.",
@@ -274,7 +275,7 @@ router.get("/google/callback", async (req: Request, res: Response, next: NextFun
 const { code } = req.query
 
 if (!code || typeof code !== "string") {
-res.status(400).json({ errorMessage: "Authorization code nout found."})
+res.status(400).json({ errorMessage: "Authorization code not found."})
 return
 }
 
@@ -296,7 +297,12 @@ try {
  return
   }
 
-  let user = await prisma.user.findUnique({
+  if (!payload.email_verified) {
+    res.status(400).json({errorMessage: "Google email is not verified"})
+ return
+  }
+
+let user = await prisma.user.findUnique({
   where: { email }
 })
 
@@ -307,6 +313,16 @@ if (!user) {
       username: username || "Google User",
       password: "",
       isEmailVerified: true
+    }
+  })
+} else if (!user.isEmailVerified) {
+  user = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isEmailVerified: true,
+      password: "",
+      resetPasswordExpiry: null,
+      resetPasswordToken: null
     }
   })
 }
