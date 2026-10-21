@@ -18,16 +18,12 @@ if (error.code === "P2025") {
 }
 
 if (error.code === "P2002") {
-    res.status(409).json({message: "Email already in use"})
+    res.status(409).json({message: "Field already exists"})
     return
 }
 
 if (error.name === "UnauthorizedError") {
   res.status(401).json({ message: "Unauthorized, please log in" });
-  return;
-}
-if (error.code === "P2002") {
-  res.status(409).json({ message: "This email is already in use" });
   return;
 }
   console.error(error);
