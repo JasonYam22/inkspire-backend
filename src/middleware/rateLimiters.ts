@@ -25,6 +25,6 @@ export const emailLimiter = rateLimit({
   limit: 15,
 skip: skipInTesting,
   message: {
-    errorMessage: "Too many email requests, please try again in an hour.",
+    errorMessage: "Too many email requests, please try again in 30 minutes.",
   },
 });
