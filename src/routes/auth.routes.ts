@@ -26,7 +26,7 @@ const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}$/;
 
   if (!passwordRegex.test(password)) {
     res.status(400).json({
-      errorMessage: "Password not strong enough. 8 characters, one uppercase, one lowercase, and one number needed.",
+      Message: "Password not strong enough. 8 characters, one uppercase, one lowercase, and one number needed.",
       field: "password",
     });
     return;
@@ -262,9 +262,21 @@ return prisma.user.update({
 
 // GET "/api/auth/google", sends user to the google login page
 router.get("/google",(req: Request, res: Response) => {
+ const mode = req.query.mode === "signup" ? "signup" : "login"
+
+  const state = `${mode}.${crypto.randomBytes(32).toString("hex")}`
+
+  res.cookie("oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 10 * 60 * 1000,
+  })
+
 const authorizeUrl = googleClient.generateAuthUrl({
   access_type:"offline",
   scope:["email", "profile"],
+  state,
 })
 res.redirect(authorizeUrl)
 })
@@ -272,12 +284,21 @@ res.redirect(authorizeUrl)
 // GET "/api/auth/google/callback", redirects user back to backend login page
 router.get("/google/callback", async (req: Request, res: Response, next: NextFunction) => {
 
-const { code } = req.query
+const { code, state } = req.query
+const savedState = req.cookies.oauth_state
 
 if (!code || typeof code !== "string") {
 res.status(400).json({ errorMessage: "Authorization code not found."})
 return
 }
+
+if (!state || !savedState || state !== savedState) {
+  res.status(400).json({ errorMessage: "Invalid login attempt, please try again." })
+  return
+}
+
+res.clearCookie("oauth_state");
+const mode = savedState.split(".")[0]
 
 try {
   const { tokens } = await googleClient.getToken(code)
@@ -305,6 +326,16 @@ try {
 let user = await prisma.user.findUnique({
   where: { email }
 })
+
+if (!user && mode === "login") {
+  res.redirect(`${process.env.CLIENT_URL}/login?error=no-account`)
+  return
+}
+
+if (user && mode === "signup") {
+  res.redirect(`${process.env.CLIENT_URL}/signup?error=exists`)
+  return
+}
 
 if (!user) {
   user = await prisma.user.create({
