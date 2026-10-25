@@ -1,7 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../prisma.js";
 
 export const createTattooIdea = async (req: Request, res: Response, next: NextFunction) => {
   try {
