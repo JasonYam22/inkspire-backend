@@ -244,6 +244,7 @@ export const googleAuth = (req: Request, res: Response) => {
   const authorizeUrl = googleClient.generateAuthUrl({
     access_type: "offline",
     scope: ["email", "profile"],
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:5000/api/auth/google/callback"
   });
   res.redirect(authorizeUrl);
 };
@@ -257,7 +258,10 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const { tokens } = await googleClient.getToken(code);
+    const { tokens } = await googleClient.getToken({
+      code,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:5005/api/auth/google/callback",
+    });
 
     const ticket = await googleClient.verifyIdToken({
       idToken: tokens.id_token!,
