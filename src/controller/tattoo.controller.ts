@@ -1,6 +1,30 @@
 import type { Request, Response, NextFunction } from "express";
 import prisma from "../prisma.js";
 
+export const getExploreIdeas = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const ideas = await prisma.tattooIdea.findMany({
+      where: { isPublic: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.status(200).json(ideas);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCollection = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const ideas = await prisma.tattooIdea.findMany({
+      where: { userId: req.payload!.id },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.status(200).json(ideas);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createTattooIdea = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body;
