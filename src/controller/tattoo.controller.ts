@@ -6,7 +6,10 @@ export const getExploreIdeas = async (req: Request, res: Response, next: NextFun
     const ideas = await prisma.tattooIdea.findMany({
       where: { isPublic: true },
       orderBy: { createdAt: "desc" },
-    });
+      include: {
+        user: true,
+      },
+    }); 
     return res.status(200).json(ideas);
   } catch (error) {
     next(error);
@@ -47,9 +50,18 @@ export const getAllTattooIdeas = async (req: Request, res: Response, next: NextF
 export const getTattooIdeaById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const tattooIdeaId = req.params.ideaId as string;
-    const tattoo = await prisma.tattooIdea.findUnique({
-      where: { id: tattooIdeaId }
-    });
+  const tattoo = await prisma.tattooIdea.findUnique({
+  where: { id: tattooIdeaId },
+  include: {
+    user: true,
+    comments: {
+      include: {
+        user: true, // 👈 Includes commenter's username
+      },
+      orderBy: { createdAt: "desc" },
+    },
+  },
+});
 
     if (!tattoo) {
       return res.status(404).json({ message: "No tattoo found" });

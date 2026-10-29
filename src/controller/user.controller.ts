@@ -7,7 +7,7 @@ export const uploadImage = async (req: Request, res: Response, next: NextFunctio
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const imageUrl = req.file.path; // Cloudinary URL
+    const imageUrl = req.file.path; 
 
     const user = await prisma.user.update({
       where: { id: req.payload!.id },

@@ -7,63 +7,56 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  USER
-  ARTIST
-}
-
 model User {
-  id                      String        @id @default(uuid())
-  email                   String        @unique
+  id                      String       @id @default(uuid())
+  email                   String       @unique
   password                String
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
   username                String
   imageUrl                String?
-  isEmailVerified         Boolean       @default(false)
-  verificationToken       String?       @unique
+  role                    Role         @default(USER)
+  isEmailVerified         Boolean      @default(false)
+  verificationToken       String?      @unique
   verificationTokenExpiry DateTime?
-  resetPasswordToken      String?       @unique
   resetPasswordExpiry     DateTime?
-  role                    Role          @default(USER)
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-
+  resetPasswordToken      String?      @unique
+  comments                Comment[]    @relation("UserComments")
   ideas                   TattooIdea[]
-  savedIdeas              TattooIdea[]  @relation("SavedIdeas")
-  comments                Comment[]     @relation("UserComments")
+  savedIdeas              TattooIdea[] @relation("SavedIdeas")
 }
 
 model TattooIdea {
-  id          String    @id @default(uuid())
-  title       String
-  genre       String?
-  spot        String?
-  imageUrl    String?
-  notes       String?
-  isFavorite  Boolean   @default(false)
-  isPublic    Boolean   @default(false)
-  artist      String?
-  social      String?
-  
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  savedBy     User[]    @relation("SavedIdeas")
-  comments    Comment[] @relation("IdeaComments")
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(uuid())
+  title      String
+  genre      String?
+  spot       String?
+  imageUrl   String?
+  notes      String?
+  isFavorite Boolean   @default(false)
+  userId     String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  artist     String?
+  social     String?
+  isPublic   Boolean   @default(false)
+  comments   Comment[] @relation("IdeaComments")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedBy    User[]    @relation("SavedIdeas")
 }
 
 model Comment {
   id           String     @id @default(uuid())
   content      String
-  
   userId       String
-  user         User       @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
-
   tattooIdeaId String
-  tattooIdea   TattooIdea @relation("IdeaComments", fields: [tattooIdeaId], references: [id], onDelete: Cascade)
-
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  tattooIdea   TattooIdea @relation("IdeaComments", fields: [tattooIdeaId], references: [id], onDelete: Cascade)
+  user         User       @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ARTIST
 }

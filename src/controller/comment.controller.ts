@@ -1,7 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../prisma.js";
 
 export const createComment = async (
   req: Request,
@@ -21,7 +19,11 @@ export const createComment = async (
         tattooIdeaId: ideaId,
         userId,
       },
+        include: {
+        user: true,
+      },
     });
+    return res.status(201).json(newComment);
   } catch (error) {
     next(error);
   }
