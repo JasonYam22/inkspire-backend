@@ -14,9 +14,9 @@ import { isAuthenticated } from "../middleware/isAuthenticated.js"
 const router = Router();
 
 router.get("/explore", isAuthenticated, getExploreIdeas);
+router.get("/collection", isAuthenticated, getCollection);
 router.get("/:ideaId", isAuthenticated, getTattooIdeaById);
 router.get("/", isAuthenticated, getAllTattooIdeas);
-router.get("/", getAllTattooIdeas);
 router.post("/", isAuthenticated, createTattooIdea);
 router.put("/:ideaId", isAuthenticated, updateTattooIdea);
 router.patch("/:ideaId/toggle-public", isAuthenticated, togglePublicStatus);

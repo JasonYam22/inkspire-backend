@@ -20,7 +20,7 @@ export const createComment = async (
         userId,
       },
         include: {
-        user: true,
+     user: { select: { username: true, imageUrl: true } },
       },
     });
     return res.status(201).json(newComment);
