@@ -1,5 +1,5 @@
 import express from "express";
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import logger from "morgan";
 import cors from "cors";
 
@@ -9,18 +9,18 @@ const FRONTEND_URL = process.env.CLIENT_URL || "http://localhost:5173";
 export const config = (app: Express) => {
   app.set("trust proxy", 1);
 
-  // controls a very specific header to pass headers from the frontend
+  // Allow browser requests from the frontend.
   app.use(
     cors({
       origin: [FRONTEND_URL],
     }),
   );
 
-  // In development environment the app logs
-  app.use(logger("dev"));
+  // Keep tokens and OAuth codes in query strings out of request logs.
+  logger.token<Request, Response>("path", (req) => req.originalUrl.split("?")[0]);
+  app.use(logger(":method :path :status :response-time ms"));
 
-  // To have access to `body` property in the request
+  // Read JSON and form fields from request bodies.
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
-  /* app.use(cookieParser()); */
 };

@@ -1,24 +1,43 @@
-import { type NextFunction, type Request, type Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import prisma from "../prisma.js";
 import { sendEmail } from "../config/mailer.js";
 import googleClient from "../config/google.js";
+import { DEMO_EMAIL } from "../config/demo.js";
 
-export const signup = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password, username } = req.body;
+const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}$/;
+const passwordError =
+  "Password not strong enough. 10 characters, one uppercase, one lowercase, and one number needed.";
+const googleRedirectUri =
+  process.env.GOOGLE_REDIRECT_URI ||
+  process.env.GOOGLE_REDIRECT_URL ||
+  `http://localhost:${process.env.PORT || 5005}/api/auth/google/callback`;
 
-  if (!email || !password) {
-    res.status(400).json({ errorMessage: "Both email and password are mandatory." });
+// Create an account and send a link to confirm the email address.
+export const signup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { email, password, username, role = "USER" } = req.body ?? {};
+
+  if (
+    typeof email !== "string" ||
+    !email ||
+    typeof password !== "string" ||
+    !password
+  ) {
+    res
+      .status(400)
+      .json({ errorMessage: "Both email and password are mandatory." });
     return;
   }
 
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}$/;
-
   if (!passwordRegex.test(password)) {
     res.status(400).json({
-      errorMessage: "Password not strong enough. 8 characters, one uppercase, one lowercase, and one number needed.",
+      errorMessage: passwordError,
       field: "password",
     });
     return;
@@ -26,14 +45,31 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ errorMessage: "Please provide a valid email address." });
+    res
+      .status(400)
+      .json({ errorMessage: "Please provide a valid email address." });
+    return;
+  }
+
+  if (email.toLowerCase() === DEMO_EMAIL) {
+    res
+      .status(400)
+      .json({ errorMessage: "This email is reserved for the demo account." });
+    return;
+  }
+
+  // Only accept the two account types shown on the signup form.
+  if (role !== "USER" && role !== "ARTIST") {
+    res.status(400).json({ errorMessage: "Choose a valid account type." });
     return;
   }
 
   try {
     const foundUser = await prisma.user.findUnique({ where: { email } });
     if (foundUser) {
-      res.status(400).json({ errorMessage: "User already exists with this email." });
+      res
+        .status(400)
+        .json({ errorMessage: "User already exists with this email." });
       return;
     }
 
@@ -47,6 +83,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
         email,
         password: hashedPassword,
         username,
+        role,
         verificationToken,
         verificationTokenExpiry,
       },
@@ -56,20 +93,35 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     await sendEmail(
       newUser.email,
       "Verify your Inkspire account",
-      `<p>Welcome to Inkspire! Click <a href="${verificationUrl}">here</a> to verify your email.</p>`
+      `<p>Welcome to Inkspire! Click <a href="${verificationUrl}">here</a> to verify your email.</p>`,
     );
 
-    res.status(201).json({ message: "Registration successful. Please check your email to verify your account." });
+    res.status(201).json({
+      message:
+        "Registration successful. Please check your email to verify your account.",
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
+// Check the email and password, then send back a login token.
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { email, password } = req.body ?? {};
 
-  if (!email || !password) {
-    res.status(400).json({ errorMessage: "Both email and password are required." });
+  if (
+    typeof email !== "string" ||
+    !email ||
+    typeof password !== "string" ||
+    !password
+  ) {
+    res
+      .status(400)
+      .json({ errorMessage: "Both email and password are required." });
     return;
   }
 
@@ -87,7 +139,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (!foundUser.isEmailVerified) {
-      res.status(403).json({ errorMessage: "Please verify your email address before logging in." });
+      res.status(403).json({
+        errorMessage: "Please verify your email address before logging in.",
+      });
       return;
     }
 
@@ -108,7 +162,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
-export const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+// Confirm the email address using the link sent during signup.
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { token } = req.query;
 
@@ -125,7 +184,9 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
     });
 
     if (!user) {
-      res.status(400).json({ errorMessage: "Invalid or expired verification token." });
+      res
+        .status(400)
+        .json({ errorMessage: "Invalid or expired verification token." });
       return;
     }
 
@@ -144,27 +205,34 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+// Return the user details from the checked login token.
 export const verifySession = (req: Request, res: Response) => {
   res.status(200).json({ payload: req.payload });
 };
 
-export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
-  const { email } = req.body;
+// Send a password reset link if the account exists.
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.body ?? {};
 
-  if (!email) {
+  if (typeof email !== "string" || !email) {
     res.status(400).json({ errorMessage: "Email is required" });
     return;
   }
 
   try {
     const foundUser = await prisma.user.findUnique({ where: { email } });
-    if (!foundUser) {
-      res.status(200).json({ message: "We sent a reset link to the email, if it exists" });
+    if (!foundUser || foundUser.email === DEMO_EMAIL) {
+      res
+        .status(200)
+        .json({ message: "We sent a reset link to the email, if it exists" });
       return;
     }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
     await prisma.user.update({
       where: { id: foundUser.id },
@@ -179,29 +247,41 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
       foundUser.email,
       "Reset your password",
       `<p>Click here to reset your password. It will expire in 1 hour</p> 
-      <a href="${resetUrl}">Reset Password</a>`
+      <a href="${resetUrl}">Reset Password</a>`,
     );
 
-    res.status(200).json({ message: "We sent a reset link to the email, if it exists" });
+    res
+      .status(200)
+      .json({ message: "We sent a reset link to the email, if it exists" });
   } catch (error) {
     console.log(error);
-    res.status(200).json({ message: "We sent a reset link to the email, if it exists" });
+    res
+      .status(200)
+      .json({ message: "We sent a reset link to the email, if it exists" });
   }
 };
 
-export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
-  const { password, token } = req.body;
+// Check the reset link, save the new password, and clear the reset token.
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { password, token } = req.body ?? {};
 
-  if (!password || !token) {
+  if (
+    typeof password !== "string" ||
+    !password ||
+    typeof token !== "string" ||
+    !token
+  ) {
     res.status(400).json({ message: "Password and token are required" });
     return;
   }
 
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm;
-
   if (!passwordRegex.test(password)) {
     res.status(400).json({
-      errorMessage: "Password not strong enough. 8 characters, one uppercase, one lowercase, and one number needed.",
+      errorMessage: passwordError,
       field: "password",
     });
     return;
@@ -218,14 +298,20 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     });
 
     if (!foundUser) {
-      res.status(400).json({ errorMessage: "This link is invalid or expired." });
+      res
+        .status(400)
+        .json({ errorMessage: "This link is invalid or expired." });
       return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.update({
-      where: { id: foundUser.id },
+      where: {
+        id: foundUser.id,
+        resetPasswordToken: hashedToken,
+        resetPasswordExpiry: { gt: new Date() },
+      },
       data: {
         password: hashedPassword,
         resetPasswordToken: null,
@@ -233,23 +319,30 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
       },
     });
 
-    res.status(200).json({ message: "Password got updated. You can log in now" });
+    res
+      .status(200)
+      .json({ message: "Password got updated. You can log in now" });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
 
+// Send the browser to Google to sign in.
 export const googleAuth = (req: Request, res: Response) => {
   const authorizeUrl = googleClient.generateAuthUrl({
     access_type: "offline",
     scope: ["email", "profile"],
-    redirect_uri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:5000/api/auth/google/callback"
+    redirect_uri: googleRedirectUri,
   });
   res.redirect(authorizeUrl);
 };
 
-export const googleCallback = async (req: Request, res: Response, next: NextFunction) => {
+// Check Google's response and send the user back to Inkspire.
+export const googleCallback = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const { code } = req.query;
 
   if (!code || typeof code !== "string") {
@@ -260,7 +353,7 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
   try {
     const { tokens } = await googleClient.getToken({
       code,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:5005/api/auth/google/callback",
+      redirect_uri: googleRedirectUri,
     });
 
     const ticket = await googleClient.verifyIdToken({
@@ -273,7 +366,9 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
     const username = payload?.name;
 
     if (!email) {
-      res.status(400).json({ errorMessage: "The google account does not provide an email" });
+      res
+        .status(400)
+        .json({ errorMessage: "The google account does not provide an email" });
       return;
     }
 

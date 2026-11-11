@@ -1,26 +1,29 @@
 import type { Request, Response, NextFunction } from "express";
 import prisma from "../prisma.js";
 
+// Add a comment to an idea.
 export const createComment = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { content } = req.body;
+    const content = req.body?.content;
     const ideaId = req.params.ideaId as string;
     const userId = req.payload!.id;
-    if (!content || content.trim() === "") {
+    if (typeof content !== "string" || !content.trim()) {
       return res.status(400).json({ message: "Comment content required" });
     }
     const newComment = await prisma.comment.create({
       data: {
         content,
-        tattooIdeaId: ideaId,
-        userId,
+        user: { connect: { id: userId } },
+        tattooIdea: {
+          connect: { id: ideaId, OR: [{ isPublic: true }, { userId }] },
+        },
       },
-        include: {
-     user: { select: { username: true, imageUrl: true } },
+      include: {
+        user: { select: { username: true, imageUrl: true } },
       },
     });
     return res.status(201).json(newComment);
@@ -29,6 +32,7 @@ export const createComment = async (
   }
 };
 
+// Load comments for an idea.
 export const getComment = async (
   req: Request,
   res: Response,
@@ -36,17 +40,28 @@ export const getComment = async (
 ) => {
   try {
     const ideaId = req.params.ideaId as string;
-    const comments = await prisma.comment.findMany({
-      where: { tattooIdeaId: ideaId },
-      include: { user: { select: { username: true } } },
-      orderBy: { createdAt: "asc" },
+    const userId = req.payload!.id;
+    const idea = await prisma.tattooIdea.findUnique({
+      where: { id: ideaId, OR: [{ isPublic: true }, { userId }] },
+      select: {
+        comments: {
+          include: { user: { select: { username: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
-    return res.status(200).json(comments);
+
+    if (!idea) {
+      return res.status(404).json({ message: "No tattoo found" });
+    }
+
+    return res.status(200).json(idea.comments);
   } catch (error) {
     next(error);
   }
 };
 
+// Let users edit their own comments.
 export const updateComment = async (
   req: Request,
   res: Response,
@@ -54,12 +69,27 @@ export const updateComment = async (
 ) => {
   try {
     const commentId = req.params.commentId as string;
-    const { content } = req.body;
-    const userId = req.payload!.id
+    const content = req.body?.content;
+    const userId = req.payload!.id;
+
+    if (typeof content !== "string" || !content.trim()) {
+      res.status(400).json({
+        message: "Comment content required",
+      });
+      return;
+    }
 
     const updatedComment = await prisma.comment.update({
-      where: { id: commentId, userId},
-      data: { content }
+      where: { id: commentId, userId },
+      data: { content },
+      include: {
+        user: {
+          select: {
+            username: true,
+            imageUrl: true,
+          },
+        },
+      },
     });
 
     return res.status(200).json(updatedComment);
@@ -68,14 +98,15 @@ export const updateComment = async (
   }
 };
 
+// Let users delete their own comments.
 export const deleteComment = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-  const commentId = req.params.commentId as string;
-    const userId = req.payload!.id
+    const commentId = req.params.commentId as string;
+    const userId = req.payload!.id;
 
     await prisma.comment.delete({
       where: { id: commentId, userId },

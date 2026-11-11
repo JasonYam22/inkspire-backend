@@ -2,7 +2,7 @@ export interface AuthPayload {
   id: string;
   email: string;
   username: string;
-  role: "USER" | "ARTIST";
+  role: Role;
 }
 
 declare global {
@@ -12,3 +12,4 @@ declare global {
     }
   }
 }
+import type { Role } from "@prisma/client";

@@ -8,13 +8,17 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET,
 });
 
+// Choose where uploaded images go and which file types are allowed.
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => ({
+  params: async () => ({
     folder: "inkspire",
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
   }),
 });
 
-export const uploader = multer({ storage });
+export const uploader = multer({
+  storage,
+  limits: { fileSize: 4 * 1024 * 1024 },
+});
 export default cloudinary;
